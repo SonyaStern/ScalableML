@@ -1,8 +1,8 @@
 ---
-title: Iris
-emoji: 🐢
-colorFrom: purple
-colorTo: green
+title: Iris Monitoring
+emoji: 💻
+colorFrom: blue
+colorTo: pink
 sdk: gradio
 sdk_version: 3.14.0
 app_file: app.py
