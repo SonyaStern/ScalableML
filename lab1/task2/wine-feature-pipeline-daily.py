@@ -50,13 +50,13 @@ def get_random_wine(dataframe):
     random_quality_str = str(random_quality)
     filtered = dataframe.query("quality==" + random_quality_str).reset_index(drop=True)
 
-    wine_df = df = pd.DataFrame({"alcohol": random.choices(filtered['alcohol'], weights=filtered['p_alcohol']),
+    wine_df = pd.DataFrame({"alcohol": random.choices(filtered['alcohol'], weights=filtered['p_alcohol']),
                                  "chlorides": random.choices(filtered['chlorides'], weights=filtered['p_chlorides']),
                                  "volatile_acidity": random.choices(filtered['volatile_acidity'],
                                                                     weights=filtered['p_volatile_acidity']),
                                  "density": random.choices(filtered['density'], weights=filtered['p_density'])
                                  })
-    df['quality'] = random_quality
+    wine_df['quality'] = random_quality
 
     return wine_df
 
