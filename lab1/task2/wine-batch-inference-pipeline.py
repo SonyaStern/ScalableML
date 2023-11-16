@@ -6,11 +6,14 @@ LOCAL = False
 if LOCAL == False:
     stub = modal.Stub()
     hopsworks_image = modal.Image.debian_slim().pip_install(
-        ["hopsworks", "joblib", "seaborn", "scikit-learn==1.1.1", "dataframe-image"])
+        ["hopsworks", "joblib", "seaborn", "scikit-learn==1.1.1", "dataframe-image"]
+    )
 
-
-    @stub.function(image=hopsworks_image, schedule=modal.Period(days=1),
-                   secret=modal.Secret.from_name("HOPSWORKS_API_KEY"))
+    @stub.function(
+        image=hopsworks_image,
+        schedule=modal.Period(days=1),
+        secret=modal.Secret.from_name("HOPSWORKS_API_KEY"),
+    )
     def f():
         g()
 
@@ -52,17 +55,18 @@ def g():
     print("Wine actual: " + str(label))
 
     print("Retrieving the monitor group")
-    monitor_fg = fs.get_or_create_feature_group(name="wine_predictions",
-                                                version=1,
-                                                primary_key=["datetime"],
-                                                description="Wine Prediction/Outcome Monitoring"
-                                                )
+    monitor_fg = fs.get_or_create_feature_group(
+        name="wine_predictions",
+        version=1,
+        primary_key=["datetime"],
+        description="Wine Prediction/Outcome Monitoring",
+    )
 
     now = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     data = {
-        'prediction': [wine_quality],
-        'label': [label],
-        'datetime': [now],
+        "prediction": [wine_quality],
+        "label": [label],
+        "datetime": [now],
     }
     monitor_df = pd.DataFrame(data)
     print(monitor_df)
@@ -77,28 +81,42 @@ def g():
     history_df = pd.concat([history_df, monitor_df])
 
     df_recent = history_df.tail(4)
-    dfi.export(df_recent, './df_recent.png', table_conversion='matplotlib')
+    dfi.export(df_recent, "./df_recent.png", table_conversion="matplotlib")
     dataset_api = project.get_dataset_api()
     dataset_api.upload("./df_recent.png", "Resources/images", overwrite=True)
 
-    predictions = history_df['prediction']
-    labels = history_df[['label']]
+    df_last = history_df.tail(1)
+    dfi.export(df_last, "./df_last.png", table_conversion="matplotlib")
+    dataset_api.upload("./df_last.png", "Resources/images", overwrite=True)
+
+    predictions = history_df["prediction"]
+    labels = history_df[["label"]]
 
     # Only create the confusion matrix when our wine_predictions feature group has examples of all 6 quality types
-    print("Number of different flower predictions to date: " + str(predictions.value_counts().count()))
+    print(
+        "Number of different flower predictions to date: "
+        + str(predictions.value_counts().count())
+    )
     if predictions.value_counts().count() == 6:
         results = confusion_matrix(labels, predictions)
 
-        df_cm = pd.DataFrame(results, ['True 3', 'True 4', 'True 5', 'True 6', 'True 7', 'True 8'],
-                             ['Pred 3', 'Pred 4', 'Pred 5', 'Pred 6', 'Pred 7', 'Pred 8'])
+        df_cm = pd.DataFrame(
+            results,
+            ["True 3", "True 4", "True 5", "True 6", "True 7", "True 8"],
+            ["Pred 3", "Pred 4", "Pred 5", "Pred 6", "Pred 7", "Pred 8"],
+        )
 
         cm = sns.heatmap(df_cm, annot=True)
         fig = cm.get_figure()
         fig.savefig("./confusion_matrix.png")
         dataset_api.upload("./confusion_matrix.png", "Resources/images", overwrite=True)
     else:
-        print("You need 6 different wine quality predictions to create the confusion matrix.")
-        print("Run the batch inference pipeline more times until you get 6 different wine predictions")
+        print(
+            "You need 6 different wine quality predictions to create the confusion matrix."
+        )
+        print(
+            "Run the batch inference pipeline more times until you get 6 different wine predictions"
+        )
 
 
 if __name__ == "__main__":
